@@ -1,3 +1,6 @@
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/glsalierno/pubchem-toxinfo-cas-retriever/blob/main/LICENSE)
+[![Python 3.x](https://img.shields.io/badge/python-3.x-blue.svg)](https://www.python.org/downloads/)
+[![MATLAB](https://img.shields.io/badge/MATLAB-R2014b%2B-orange.svg)](https://www.mathworks.com/products/matlab.html)
 # name-to-HSPiP_data
 Scripts to retrieve CAS numbers, IUPAC names, and SMILES from compound names via PubChem API, then compute Hansen Solubility Parameters (HSP) using HSPiP. Features chemical validation. MATLAB-Python integration.
 
