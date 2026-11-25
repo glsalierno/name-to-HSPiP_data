@@ -1,6 +1,5 @@
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/glsalierno/pubchem-toxinfo-cas-retriever/blob/main/LICENSE)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.x](https://img.shields.io/badge/python-3.x-blue.svg)](https://www.python.org/downloads/)
-[![MATLAB](https://img.shields.io/badge/MATLAB-R2014b%2B-orange.svg)](https://www.mathworks.com/products/matlab.html)
 # Name to CAS, SMILES, and HSP Retrieval
 
 This repository provides scripts to retrieve CAS numbers, IUPAC names, and SMILES from compound names via the PubChem API, then compute Hansen Solubility Parameters (HSP) using the HSPiP software. It includes chemical validation ("chemical wisdom") for corrections and warnings, with MATLAB-Python integration.
@@ -24,7 +23,7 @@ This repository provides scripts to retrieve CAS numbers, IUPAC names, and SMILE
 ## Requirements
 ### Must-Haves
 - **Python 3.x**: Install via [python.org](https://www.python.org/).
-  - Required packages: `requests` (`pip install requests`).
+  - Required packages: `requests` (`python -m pip install -r requirements.txt`).
 - **MATLAB**: Base installation (no extra toolboxes needed). Tested on recent versions.
 - **HSPiP Software**: Must be installed with CLI mode enabled. Obtain from the official HSPiP website: [HSPiP | Hansen Solubility Parameters](https://www.hansen-solubility.com/HSPiP). CLI requires a specific license—contact HSPiP support if unsure. For details on the Command Line Interface, see [HSPiP CLI Documentation](https://www.hansen-solubility.com/HSPiP/CLI.php) and the associated guide: [HSPiP Command Line Interface.docx](https://www.hansen-solubility.com/contents/HSPiP%20Command%20Line%20Interface.docx). Update script paths to point to your local HSPiP installation directory.
 
@@ -84,3 +83,19 @@ If stuck, open an issue with error logs.
 - HSPiP CLI Guide: [HSPiP Command Line Interface.docx](https://www.hansen-solubility.com/contents/HSPiP%20Command%20Line%20Interface.docx)
 - PubChem API: [Programmatic Access Documentation](https://pubchem.ncbi.nlm.nih.gov/docs/programmatic-access)
 
+
+## Offline tests
+
+```text
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v
+```
+
+The tests mock PubChem requests; CI does not call PubChem or exercise MATLAB.
+Network calls are paced in each process and retry HTTP 429 or 503 at most twice.
+The tool honors Retry-After. If PubChem requests a wait over 30 seconds, the
+tool does not retry early or issue a new request during that cooldown. Keep
+batch sizes modest and follow [PubChem's usage policy](https://pubchem.ncbi.nlm.nih.gov/docs/programmatic-access).
+
+The Python name lookup preserves its three tab-separated stdout fields for the MATLAB bridge.
+A PubChem synonym lookup returns a **candidate CAS**, not independent identity validation.

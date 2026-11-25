@@ -30,43 +30,47 @@
 import sys
 import requests
 import logging
+from urllib.parse import quote
+from pubchem_http import pubchem_get
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+LOG = logging.getLogger(__name__)
+TIMEOUT = 10
+NOT_FOUND = "Not found\tNot found\tNot found"
 
 def get_compound_info(compound_name):
     base_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug'
     try:
         # Get CID by name
-        cid_url = f'{base_url}/compound/name/{compound_name}/cids/JSON'
-        response = requests.get(cid_url, timeout=10)
-        response.raise_for_status()
+        cid_url = f"{base_url}/compound/name/{quote(compound_name, safe='')}/cids/JSON"
+        response = pubchem_get(cid_url, timeout=TIMEOUT, context=f"{compound_name}: CID lookup")
         data = response.json()
         cid = data['IdentifierList']['CID'][0]
         
         # Get CAS from synonyms
         synonyms_url = f'{base_url}/compound/cid/{cid}/synonyms/JSON'
-        response = requests.get(synonyms_url, timeout=10)
-        response.raise_for_status()
+        response = pubchem_get(synonyms_url, timeout=TIMEOUT, context=f"{compound_name}: synonyms")
         synonyms = response.json()['InformationList']['Information'][0]['Synonym']
         cas = next((s for s in synonyms if s.replace('-', '').isdigit()), 'Not found')
         
         # Get IUPAC
         iupac_url = f'{base_url}/compound/cid/{cid}/property/IUPACName/TXT'
-        iupac = requests.get(iupac_url, timeout=10).text.strip()
+        iupac = pubchem_get(iupac_url, timeout=TIMEOUT, context=f"{compound_name}: IUPAC name").text.strip()
         
         # Get SMILES
-        smiles_url = f'{base_url}/compound/cid/{cid}/property/IsomericSMILES/TXT'
-        smiles = requests.get(smiles_url, timeout=10).text.strip()
+        smiles_url = f'{base_url}/compound/cid/{cid}/property/SMILES/TXT'
+        smiles = pubchem_get(smiles_url, timeout=TIMEOUT, context=f"{compound_name}: SMILES").text.strip()
         
         return f"{cas}\t{iupac}\t{smiles}"
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Request failed for {compound_name}: {e}")
-        return "Not found\tNot found\tNot found"
-    except Exception as e:
-        logging.error(f"Unexpected error for {compound_name}: {e}")
-        return "Not found\tNot found\tNot found"
+    except requests.exceptions.JSONDecodeError as e:
+        LOG.error("%s: invalid PubChem JSON: %s", compound_name, e)
+    except requests.RequestException as e:
+        LOG.error("%s: PubChem request failed: %s", compound_name, e)
+    except (ValueError, KeyError, IndexError, TypeError, AttributeError) as e:
+        LOG.error("%s: unexpected PubChem response: %s", compound_name, e)
+    return NOT_FOUND
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     if len(sys.argv) < 2:
         print("Usage: python get_compound_info2.py <compound_name>")
         sys.exit(1)
